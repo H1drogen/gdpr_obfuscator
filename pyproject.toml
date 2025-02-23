@@ -7,6 +7,10 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.9"
+moto = "^5.0.28"
+boto3 = "^1.36.26"
+pandas = "^2.2.3"
+pytest = "^8.3.4"
 
 
 [build-system]
