@@ -1,11 +1,11 @@
 import boto3
 import pandas as pd
-from moto import mock_s3
+from moto import mock_aws
 import pytest
 
 @pytest.fixture
-def s3_setup():
-    with mock_s3():
+def test_s3_setup():
+    with mock_aws():
         s3 = boto3.client('s3', region_name='us-east-1')
         bucket_name = 'my_ingestion_bucket'
         s3.create_bucket(Bucket=bucket_name)
