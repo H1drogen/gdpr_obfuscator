@@ -3,6 +3,9 @@ import pandas as pd
 from moto import mock_aws
 import pytest
 
+from obfuscator.main import lambda_handler
+
+
 @pytest.fixture
 def test_s3_setup():
     with mock_aws():
@@ -13,5 +16,17 @@ def test_s3_setup():
         csv_data = """student_id,name,course,cohort,graduation_date,email_address
         1234,John Smith,Software,2024-03-31,j.smith@email.com"""
         s3.put_object(Bucket=bucket_name, Key='new_data/file1.csv', Body=csv_data)
-
         yield s3
+
+def test_lambda_handler(test_s3_setup):
+    event = {
+        'file_to_obfuscate': 's3://my_ingestion_bucket/new_data/file1.csv',
+        'pii_fields': ['name', 'email_address']
+    }
+
+    context = {}
+
+    response = lambda_handler(event, context)
+
+    assert response['statusCode'] == 200
+    assert 'File obfuscated and saved to s3://my_ingestion_bucket/new_data/file1_obfuscated.csv' in response['body']
