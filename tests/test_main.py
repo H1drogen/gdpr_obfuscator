@@ -1,3 +1,5 @@
+from io import BytesIO
+
 import boto3
 import pandas as pd
 from moto import mock_aws
@@ -18,7 +20,7 @@ def test_s3_setup():
         s3.put_object(Bucket=bucket_name, Key='new_data/file1.csv', Body=csv_data)
         yield s3
 
-def test_lambda_handler(test_s3_setup):
+def test_lambda_handler_obfuscates_pii_fields(test_s3_setup):
     event = {
         'file_to_obfuscate': 's3://my_ingestion_bucket/new_data/file1.csv',
         'pii_fields': ['name', 'email_address']
@@ -30,3 +32,28 @@ def test_lambda_handler(test_s3_setup):
 
     assert response['statusCode'] == 200
     assert 'File obfuscated and saved to s3://my_ingestion_bucket/new_data/file1_obfuscated.csv' in response['body']
+
+    obfuscated_obj = test_s3_setup.get_object(Bucket='my_ingestion_bucket', Key='new_data/file1_obfuscated.csv')['Body'].read()
+    df_obfuscated = pd.read_csv(BytesIO(obfuscated_obj))
+
+    assert df_obfuscated['name'].iloc[0] == '***'
+    assert df_obfuscated['email_address'].iloc[0] == '***'
+
+def test_lambda_handler_handles_empty_pii_fields(test_s3_setup):
+    event = {
+        'file_to_obfuscate': 's3://my_ingestion_bucket/new_data/file1.csv',
+        'pii_fields': []
+    }
+
+    context = {}
+
+    response = lambda_handler(event, context)
+
+    assert response['statusCode'] == 200
+    assert 'File obfuscated and saved to s3://my_ingestion_bucket/new_data/file1_obfuscated.csv' in response['body']
+
+    obfuscated_obj = test_s3_setup.get_object(Bucket='my_ingestion_bucket', Key='new_data/file1_obfuscated.csv')['Body'].read()
+    df_obfuscated = pd.read_csv(BytesIO(obfuscated_obj))
+
+    assert df_obfuscated['name'].iloc[0] == 'John Smith'
+    assert df_obfuscated['email_address'].iloc[0] == 'j.smith@email.com'
