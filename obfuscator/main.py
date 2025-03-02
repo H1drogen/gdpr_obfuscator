@@ -1,6 +1,15 @@
+"""
+Module provides a function to obfuscate specified PII fields in a CSV file stored in an S3 bucket.
+
+The main function `lambda_handler` is designed to be used as an AWS Lambda function. It reads a CSV file from
+an S3 bucket, obfuscates the specified PII fields, and writes the obfuscated file back to the S3 bucket.
+"""
+
+from io import BytesIO
 import boto3
 import pandas as pd
-from io import BytesIO
+
+
 
 def lambda_handler(event, context):
     """
@@ -20,13 +29,14 @@ def lambda_handler(event, context):
     s3 = boto3.client('s3')
     bucket_name = event['file_to_obfuscate'].split('/')[2]
     file_name = '/'.join(event['file_to_obfuscate'].split('/')[3:])
-    file_path = f'/tmp/{file_name}'
     obj = s3.get_object(Bucket=bucket_name, Key=file_name)['Body'].read()
     df = pd.read_csv(BytesIO(obj))
     for col in event['pii_fields']:
         df[col] = '***'
-    s3.put_object(Bucket=bucket_name, Key=file_name.replace('.csv', '_obfuscated.csv'), Body=df.to_csv(index=False))
+    s3.put_object(Bucket=bucket_name, Key=file_name.replace('.csv', '_obfuscated.csv'),
+                  Body=df.to_csv(index=False))
+    new_file_path = file_name.replace('.csv', '_obfuscated.csv')
     return {
         'statusCode': 200,
-        'body': f'File obfuscated and saved to s3://{bucket_name}/{file_name.replace(".csv", "_obfuscated.csv")}'
+        'body': f'File obfuscated and saved to s3://{bucket_name}/{new_file_path}'
     }
