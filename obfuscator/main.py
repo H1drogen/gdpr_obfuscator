@@ -3,6 +3,20 @@ import pandas as pd
 from io import BytesIO
 
 def lambda_handler(event, context):
+    """
+    AWS Lambda function to obfuscate specified PII fields in a CSV file stored in an S3 bucket.
+
+    Parameters:
+    event (dict): Event data passed to the function, expected to contain:
+        - 'file_to_obfuscate' (str): S3 URI of the file to be obfuscated.
+        - 'pii_fields' (list): List of column names in the CSV file that need to be obfuscated.
+    context (object): AWS Lambda context object (not used in this function).
+
+    Returns:
+    dict: Response object containing:
+        - 'statusCode' (int): HTTP status code indicating the result of the operation.
+        - 'body' (str): Message indicating the outcome of the obfuscation process.
+    """
     s3 = boto3.client('s3')
     bucket_name = event['file_to_obfuscate'].split('/')[2]
     file_name = '/'.join(event['file_to_obfuscate'].split('/')[3:])
