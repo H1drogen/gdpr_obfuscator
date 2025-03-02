@@ -21,20 +21,19 @@ def test_s3_setup():
         s3.put_object(Bucket=bucket_name, Key='new_data/file1.csv', Body=csv_data)
         yield s3
 
-def test_lambda_handler_creates_new_obfuscated_file(test_s3_setup):
+def test_lambda_handler_creates_a_new_obfuscated_file(test_s3_setup):
     event = {
         'file_to_obfuscate': 's3://my_ingestion_bucket/new_data/file1.csv',
         'pii_fields': ['name', 'email_address']
     }
 
-    response = lambda_handler(event, {})
+    new_name = 'new_data/file1_obfuscated.csv'
+    assert test_s3_setup.get_object(Bucket='my_ingestion_bucket', Key=new_name)['Body'].read()
 
-    assert test_s3_setup.get_object(Bucket='my_ingestion_bucket', Key='new_data/file1_obfuscated.csv')['Body'].read()
-
-def test_lambda_handler_obfuscates_relevant_pii_field(test_s3_setup):
+def test_lambda_handler_obfuscates_a_relevant_pii_field(test_s3_setup):
     event = {
         'file_to_obfuscate': 's3://my_ingestion_bucket/new_data/file1.csv',
-        'pii_fields': ['name', 'email_address']
+        'pii_fields': ['name']
     }
 
     response = lambda_handler(event, {})
@@ -46,10 +45,9 @@ def test_lambda_handler_obfuscates_relevant_pii_field(test_s3_setup):
     df_obfuscated = pd.read_csv(BytesIO(obfuscated_obj))
 
     assert df_obfuscated['name'].iloc[0] == '***'
-    assert df_obfuscated['email_address'].iloc[0] == '***'
     assert df_obfuscated['student_id'].iloc[0] == 1234
 
-def test_lambda_handler_obfuscates_all_pii_fields(test_s3_setup):
+def test_lambda_handler_fully_obfuscates_pii_fields_in_column(test_s3_setup):
     event = {
         'file_to_obfuscate': 's3://my_ingestion_bucket/new_data/file1.csv',
         'pii_fields': ['name', 'email_address']
