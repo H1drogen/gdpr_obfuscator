@@ -15,20 +15,22 @@ jobs:
       with:
         python-version: '3.9'
 
+    - name: Install Poetry
+      run: |
+        curl -sSL https://install.python-poetry.org | python3 -
+
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install pytest moto bandit safety
+        poetry install
 
     - name: Run tests
       run: |
-        pytest
+        poetry run pytest
 
     - name: Run Bandit for security issues
       run: |
-        bandit -r .
+        poetry run bandit
 
     - name: Run Safety for dependency vulnerabilities
       run: |
-        safety check
+        poetry safety check
