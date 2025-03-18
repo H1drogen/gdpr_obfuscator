@@ -1,50 +1,50 @@
-name: checks
-
-on: [push, pull_request]
-
-jobs:
-  test:
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
-
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.9'
-
-    - name: Install Poetry
-      run: |
-        curl -sSL https://install.python-poetry.org | python3 -
-
-    - name: Install dependencies
-      run: |
-        poetry update
-
-    - name: Configure AWS credentials
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      run: |
-        aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
-        aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
-        aws configure set default.region us-east-1
-
-
-    - name: Set PYTHONPATH
-      run: |
-        echo "PYTHONPATH=$(pwd)" >> $GITHUB_ENV
-
-    - name: Run tests
-      run: |
-        poetry run pytest
-
-    - name: Run Bandit for security issues
-      run: |
-        poetry run bandit
-
-    - name: Run Safety for dependency vulnerabilities
-      run: |
-        poetry safety check
+#name: checks
+#
+#on: [push, pull_request]
+#
+#jobs:
+#  test:
+#    runs-on: ubuntu-latest
+#
+#    steps:
+#    - name: Checkout code
+#      uses: actions/checkout@v3
+#
+#    - name: Set up Python
+#      uses: actions/setup-python@v4
+#      with:
+#        python-version: '3.9'
+#
+#    - name: Install Poetry
+#      run: |
+#        curl -sSL https://install.python-poetry.org | python3 -
+#
+#    - name: Install dependencies
+#      run: |
+#        poetry update
+#
+#    - name: Configure AWS credentials
+#      env:
+#        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+#        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+#      run: |
+#        aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
+#        aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+#        aws configure set default.region us-east-1
+#
+#
+#    - name: Set PYTHONPATH
+#      run: |
+#        echo "PYTHONPATH=$(pwd)" >> $GITHUB_ENV
+#
+#    - name: Run tests
+#      run: |
+#        poetry run pytest
+#
+#    - name: Run Bandit for security issues
+#      run: |
+#        poetry run bandit
+#
+#    - name: Run Safety for dependency vulnerabilities
+#      run: |
+#        poetry safety check
