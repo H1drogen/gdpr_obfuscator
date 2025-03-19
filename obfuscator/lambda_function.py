@@ -5,7 +5,7 @@ The main function `lambda_handler` is designed to be used as an AWS Lambda funct
 an S3 bucket, obfuscates the specified PII fields, and writes the obfuscated file back to the S3 bucket.
 """
 
-from io import BytesIO
+from io import BytesIO, StringIO
 import boto3
 import pandas as pd
 
@@ -29,8 +29,8 @@ def lambda_handler(event, context):
     s3 = boto3.client('s3')
     bucket_name = event['file_to_obfuscate'].split('/')[2]
     file_name = '/'.join(event['file_to_obfuscate'].split('/')[3:])
-    obj = s3.get_object(Bucket=bucket_name, Key=file_name)['Body'].read()
-    df = pd.read_csv(BytesIO(obj))
+    obj = s3.get_object(Bucket=bucket_name, Key=file_name)['Body']
+    df = pd.read_csv(obj)
     for col in event['pii_fields']:
         df[col] = '***'
     s3.put_object(Bucket=bucket_name, Key=file_name.replace('.csv', '_obfuscated.csv'),
