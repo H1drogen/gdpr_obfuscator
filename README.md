@@ -1,91 +1,100 @@
-# GDPR Obfuscator Project
+# GDPR Obfuscator tool
+
+## Overview
+
+This project provides a pythonic function to obfuscate specified PII fields in a CSV file stored in an S3 bucket. The main function `lambda_handler` is designed to be used as an AWS Lambda function. It reads a CSV file from an S3 bucket, obfuscates the specified PII fields, and writes the obfuscated file back to the S3 bucket.
+
+## Prerequisites
+
+- AWS account with s3 and lambda functions
+
+## Setup
 
 
-## Context
-The purpose of this project is to create a general-purpose tool to process data being ingested to AWS and
-intercept personally identifiable information (PII). All information stored by Northcoders data projects should be for bulk data analysis only. Consequently, there is a requirement under [GDPR](https://ico.org.uk/media/for-organisations/guide-to-data-protection/guide-to-the-general-data-protection-regulation-gdpr-1-1.pdf) to ensure that all data containing 
-information that can be used to identify an individual should be anonymised. 
+### Create Lambda Function with the AWS Lambda Console Instructions
 
+1. **Create a Lambda Function:**
+   - Go to the AWS Lambda console.
+   - Click on "Create function".
+   - Choose "Author from scratch".
+   - Enter a function name.
+   - Choose "Python 3.12" as the runtime and "x86_64" architecture.
+   - Click "Create function".
 
+2. **Add Permissions to the AWS Bucket for the Lambda Function:**
+   - Go to the IAM console, click on "Policies" in the left-hand menu (under access management).
+   - Attach the `AmazonS3FullAccess` AWS managed policy to the Lambda execution role.
 
-## Assumptions and Prerequisites
-1. Data is stored in CSV-, JSON-, or parquet-formatted files in an AWS S3 bucket.
-2. Fields containing GDPR-sensitive data are known and will be supplied in advance.
-3. Data records will be supplied with a primary key.
+3. **Upload the Code:**
+   - Create a zip file containing the `lambda_function.py`.
+   - In the Lambda console, upload the zip file in the code source section.
 
-## High-level desired outcome
-You are required to provide an obfuscation tool that can be integrated as a library module into a Python codebase.
+4. **Create a Layer Compatible with the Lambda Runtime (Python 3.12):**
+   - In the Lambda console, click on "Layers" in the left-hand menu (under additional resources).
+   - Click "Create layer".
+   - Enter a name for the layer.
+   - Upload the zip file named "lambda_layer.zip" found in the codebase (obfuscator/lambda_layer.zip).
+   - Choose "Python 3.12" as a compatible runtime.
+   - Click "Create".
 
-The tool will be supplied with the S3 location of a file containing sensitive information, and
-the names of the affected fields. It will create a new file or byte-stream object containing an 
-exact copy of the input file
-but with the sensitive data replaced with obfuscated strings. The calling procedure will handle saving the 
-output to its destination. 
-It is expected that the tool will be deployed within the AWS account.
+5. **Add the Layer to Your Lambda Function:**
+   - In the Lambda console, go to your Lambda function.
+   - In the "Layers" section at the bottom of the Code tab, click "Add a layer".
+   - Choose "Custom layers".
+   - Select the layer and version you created.
+   - Click "Add".
 
-## Minimum viable product
-In the first instance, it is only necessary to be able to process CSV data.
+6. **Set the Timeout:**
+   - In the Lambda function configuration tab, increase the timeout to a high enough number to ensure the function has enough time to process your large files.
 
-The tool will be invoked by sending a JSON string containing:
-- the S3 location of the required CSV file for obfuscation
-- the names of the fields that are required to be obfuscated
+## Usage Instructions
 
+### Event Data
 
-For example, the input might be:
+The `lambda_handler` function expects the following event data:
+
+- `file_to_obfuscate` (str): S3 URI of the file to be obfuscated.
+- `pii_fields` (list): List of column names in the CSV file that need to be obfuscated.
+
+### Example Event
+
 ```json
 {
-    "file_to_obfuscate": "s3://my_ingestion_bucket/new_data/file1.csv",
-    "pii_fields": ["name", "email_address"]
+  "file_to_obfuscate": "s3://my_ingestion_bucket/new_data/file1.csv",
+  "pii_fields": ["name", "email_address"]
 }
 ```
 
-The target CSV file might look like this:
-```csv
-student_id,name,course,cohort,graduation_date,email_address
-...
-1234,'John Smith','Software','2024-03-31','j.smith@email.com'
-...
-```
+### Output
 
-The output will be a byte-stream representation of a file like this:
-```csv
-student_id,name,course,cohort,graduation_date,email_address
-...
-1234,'***','Software','2024-03-31','***'
-...
-```
+The output of the obfuscation tool will be a new CSV file, of the input file with the specified PII fields obfuscated, found in the same S3 location as the input with the suffix '_obfuscated'. 
 
-The output format should provide content compatible with the `boto3` [S3 Put Object](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3/client/put_object.html) function.
+## Running the tests
 
-Invocation is likely to be via a tool such as EventBridge, Step Functions, or Airflow. The invocation mechanism
-is not a required element of this project.
+1. **Run the following command** to clone the repository in your terminal:
 
+    ```sh
+    git clone https://github.com/H1drogen/gdpr_obfuscator.git
+    ```
 
+3. **Navigate into the cloned repository**:
 
-## Non-functional requirements
-- The tool should be written in Python, be unit tested, PEP-8 compliant, and tested for security vulnerabilities.
-- The code should include documentation.
-- No credentials are to be recorded in the code.
-- The complete size of the module should not exceed [the memory limits for Python Lambda dependencies](https://docs.aws.amazon.com/lambda/latest/dg/gettingstarted-package.html)
+    ```sh
+    cd gdpr_obfuscator
+    ```
 
+2. **Ensure you have `python` and `poetry` installed**. Install the poetry dependencies into current python interpreter by:
+    ```sh
+    poetry update
+    env activate
+    ```
 
-## Performance criteria
-- The tool should be able to handle files of up to 1MB with a runtime of less than 1 minute
+3. Make sure your python path is set correctly with
+    ```sh
+    export PYTHONPATH=$PYTHONPATH:/path/to/your/project
+    ```
 
-
-## Possible extensions
-The MVP could be extended to allow for other file formats, primarily JSON and Parquet. The output file formats should be the same as the input formats.
-
-
-## Non-binding tech suggestions
-It is expected that the code will use the AWS SDK for Python (boto3). Code may be tested with any standard tool
-such as Pytest, Unittest, or Nose.
-
-The library should be suitable for deployment on a platform within the AWS ecosystem, such as EC2, ECS, or Lambda.
-
-Although the finished product is intended to be used as a library function invoked by other code, you may
-want to be able to demonstrate its use by invoking it from the command line.
-
-
-## Due date
-To be advised, but not later than four weeks from commencement.
+5. **Run the tests** using the following command:
+    ```sh
+    poetry run pytest tests/test_lambda_function.py
+    ```

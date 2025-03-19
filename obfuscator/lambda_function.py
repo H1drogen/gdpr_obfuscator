@@ -23,8 +23,8 @@ def lambda_handler(event, context):
 
     Returns:
     dict: Response object containing:
-        - 'statusCode' (int): HTTP status code indicating the result of the operation.
-        - 'body' (str): Message indicating the outcome of the obfuscation process.
+        - 'statusCode' : HTTP status code indicating the result of the operation.
+        - 'body' : Message indicating the outcome of the obfuscation process.
     """
     s3 = boto3.client('s3')
     bucket_name = event['file_to_obfuscate'].split('/')[2]
