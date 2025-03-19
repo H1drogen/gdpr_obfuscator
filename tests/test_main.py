@@ -5,7 +5,7 @@ import pandas as pd
 from moto import mock_aws
 import pytest
 
-from obfuscator.main import lambda_handler
+from obfuscator.lambda_function import lambda_handler
 
 
 @pytest.fixture
