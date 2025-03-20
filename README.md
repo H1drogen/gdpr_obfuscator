@@ -26,7 +26,7 @@ This project provides a pythonic function to obfuscate specified PII fields in a
    - Attach the `AmazonS3FullAccess` AWS managed policy to the Lambda execution role.
 
 3. **Upload the Code:**
-   - Create a zip file containing the `lambda_function.py`.
+   - Download the zip file named "lambda_function.zip" found in the codebase (obfuscator/lambda_function.zip).
    - In the Lambda console, upload the zip file in the code source section.
 
 4. **Create a Layer Compatible with the Lambda Runtime (Python 3.12):**
@@ -69,7 +69,7 @@ The `lambda_handler` function expects the following event data:
 
 The output of the obfuscation tool will be a new CSV file, of the input file with the specified PII fields obfuscated, found in the same S3 location as the input with the suffix '_obfuscated'. 
 
-## Running the tests
+## Running the tests in Terminal
 
 1. **Run the following command** to clone the repository in your terminal:
 
